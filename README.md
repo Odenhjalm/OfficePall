@@ -1,6 +1,5 @@
 # OfficePall
 A GPT-powered assistant for Microsoft Office support, deployed with FastAPI + Tailwind + HTMX.
-# OfficePall
 
 OfficePall is a GPT-powered assistant fine-tuned to provide expert support for Microsoft Office apps (Word, Excel, Outlook, etc.).  
 Built with **FastAPI**, styled using **Tailwind CSS**, and enhanced with **HTMX** for snappy interactivity.

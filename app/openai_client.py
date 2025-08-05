@@ -1,9 +1,15 @@
 import os
 import requests
 
-API_KEY = os.getenv("OPENAI_API_KEY")
+# Hämta från miljövariabler
+API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 API_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
 
+# Använd rätt API-version
+API_VERSION = "2025-01-01-preview"
+
+# Systemprompt (anpassad för OfficeKing)
 SYSTEM_PROMPT = """
 Du är en Microsoft-specialist som arbetar som supportassistent och hjälper användare med deras frågor och problem relaterade till Microsofts produkter och tjänster. Svara alltid enkelt, konkret och vänligt. Prioritera att ge tydliga steg-för-steg-lösningar eller direkta svar på frågan. Om ytterligare information krävs från användaren, be om detta på ett artigt sätt. Använd ett professionellt och effektivt språk.
 
@@ -54,6 +60,7 @@ Hoppas detta löser problemet! Behöver du ytterligare hjälp är det bara att f
 """
 
 def query_model(prompt: str) -> str:
+    url = f"{API_ENDPOINT}/openai/deployments/{DEPLOYMENT_NAME}/chat/completions?api-version={API_VERSION}"
     headers = {
         "Content-Type": "application/json",
         "api-key": API_KEY,
@@ -65,9 +72,9 @@ def query_model(prompt: str) -> str:
         ]
     }
     try:
-        response = requests.post(API_ENDPOINT, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()
         return data["choices"][0]["message"]["content"]
     except Exception as e:
-        return f"Error: {e}"
+        return f"❌ Error: {e}"

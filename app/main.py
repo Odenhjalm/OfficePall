@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from openai_client import query_model
+from app.openai_client import query_model  # Make sure this function is async
 
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
@@ -12,5 +12,9 @@ def home(request: Request):
 
 @app.post("/ask", response_class=HTMLResponse)
 async def ask(request: Request, question: str = Form(...)):
-    answer = query_model(question)
-    return templates.TemplateResponse("index.html", {"request": request, "question": question, "answer": answer})
+    answer = await query_model(question)  # Await the async function
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "question": question,
+        "answer": answer
+    })

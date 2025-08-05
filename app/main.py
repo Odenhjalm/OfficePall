@@ -1,11 +1,15 @@
 import os
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 import httpx
 
-# Hämta API-nyckel och endpoint från miljövariabler (GitHub Secrets eller .env vid lokal körning)
-AZURE_OPENAI_ENDPOINT = os.environ.get("AZURE_OPENAI_ENDPOINT")
-API_KEY = os.environ.get("AZURE_OPENAI_KEY")  # Se till att detta är rätt namn i GitHub Secrets
+app = FastAPI()
 
-# Systemprompt för OfficeKing
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-preview")
+
 SYSTEM_PROMPT = """
 Du är en Microsoft-specialist som arbetar som supportassistent och hjälper användare med deras frågor och problem relaterade till Microsofts produkter och tjänster. Svara alltid enkelt, konkret och vänligt. Prioritera att ge tydliga steg-för-steg-lösningar eller direkta svar på frågan. Om ytterligare information krävs från användaren, be om detta på ett artigt sätt. Använd ett professionellt och effektivt språk.
 
@@ -47,12 +51,13 @@ Om OneDrive inte synkroniserar, prova följande steg:
 Hoppas detta löser problemet! Behöver du ytterligare hjälp är det bara att fråga.
 """
 
-# Async-funktion som frågar modellen
 async def query_model(prompt: str) -> str:
     headers = {
         "Content-Type": "application/json",
-        "api-key": API_KEY,
+        "api-key": AZURE_OPENAI_API_KEY,
     }
+
+    url = f"{AZURE_OPENAI_ENDPOINT}/openai/deployments/{AZURE_OPENAI_DEPLOYMENT_NAME}/chat/completions?api-version={AZURE_OPENAI_API_VERSION}"
 
     payload = {
         "messages": [
@@ -62,14 +67,23 @@ async def query_model(prompt: str) -> str:
     }
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                AZURE_OPENAI_ENDPOINT,
-                headers=headers,
-                json=payload,
-            )
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"]
     except Exception as e:
         return f"❌ Fel: {str(e)}"
+
+@app.get("/")
+def root():
+    return {"message": "OfficePall är online 🚀"}
+
+@app.post("/ask")
+async def ask(request: Request):
+    body = await request.json()
+    prompt = body.get("prompt")
+    if not prompt:
+        return JSONResponse(status_code=400, content={"error": "Ingen fråga angiven."})
+    answer = await query_model(prompt)
+    return {"answer": answer}

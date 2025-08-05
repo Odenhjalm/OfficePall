@@ -33,4 +33,4 @@ jobs:
 
     - name: 🚀 Run OfficePall Azure client
       run: |
-        python openai_client.py
+        python app/openai_client.py
